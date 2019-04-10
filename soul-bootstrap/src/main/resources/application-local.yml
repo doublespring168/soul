@@ -8,14 +8,14 @@ spring:
   application:
     name: soul-bootstrap
   redis:
-    password: foobaredbbexONE123
+    #password: foobaredbbexONE123
     timeout: 300000ms
     sentinel:
       master: mymaster
       nodes:
-        - 192.168.1.91:26379
-        - 192.168.1.92:26379
-        - 192.168.1.93:26379
+        - 127.0.0.1:26479
+        - 127.0.0.1:26579
+        - 127.0.0.1:26679
   influxdb:
     url: http://localhost:8086
     username: test
