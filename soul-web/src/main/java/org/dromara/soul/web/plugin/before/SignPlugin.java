@@ -65,16 +65,6 @@ public class SignPlugin extends AbstractSoulPlugin {
     }
 
     @Override
-    public String named() {
-        return PluginEnum.SIGN.getName();
-    }
-
-    @Override
-    public int getOrder() {
-        return PluginEnum.SIGN.getCode();
-    }
-
-    @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
         final Boolean success = signVerify(Objects.requireNonNull(requestDTO));
@@ -112,6 +102,15 @@ public class SignPlugin extends AbstractSoulPlugin {
                 buildParamsMap(requestDTO), appAuthZkDTO.getAppSecret());
     }
 
+    private Map<String, String> buildParamsMap(final RequestDTO dto) {
+        Map<String, String> map = Maps.newHashMapWithExpectedSize(4);
+        map.put(Constants.TIMESTAMP, dto.getTimestamp());
+        map.put(Constants.MODULE, dto.getModule());
+        map.put(Constants.METHOD, dto.getMethod());
+        map.put(Constants.RPC_TYPE, dto.getRpcType());
+        return map;
+    }
+
     /**
      * return plugin type.
      *
@@ -122,13 +121,14 @@ public class SignPlugin extends AbstractSoulPlugin {
         return PluginTypeEnum.BEFORE;
     }
 
-    private Map<String, String> buildParamsMap(final RequestDTO dto) {
-        Map<String, String> map = Maps.newHashMapWithExpectedSize(4);
-        map.put(Constants.TIMESTAMP, dto.getTimestamp());
-        map.put(Constants.MODULE, dto.getModule());
-        map.put(Constants.METHOD, dto.getMethod());
-        map.put(Constants.RPC_TYPE, dto.getRpcType());
-        return map;
+    @Override
+    public int getOrder() {
+        return PluginEnum.SIGN.getCode();
+    }
+
+    @Override
+    public String named() {
+        return PluginEnum.SIGN.getName();
     }
 
 }

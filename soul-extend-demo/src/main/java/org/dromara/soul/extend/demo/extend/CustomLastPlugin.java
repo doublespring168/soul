@@ -28,8 +28,9 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- *  This is your custom plugin.
- *  He is running in the end, implement your own functionality.
+ * This is your custom plugin.
+ * He is running in the end, implement your own functionality.
+ *
  * @author xiaoyu(Myth)
  */
 @Component

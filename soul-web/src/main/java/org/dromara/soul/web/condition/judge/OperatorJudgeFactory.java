@@ -44,6 +44,7 @@ public class OperatorJudgeFactory {
 
     /**
      * judge request realData has by pass.
+     *
      * @param conditionZkDTO condition data
      * @param realData       realData
      * @return is true pass   is false not pass

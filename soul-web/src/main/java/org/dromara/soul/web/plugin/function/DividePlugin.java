@@ -135,6 +135,21 @@ public class DividePlugin extends AbstractSoulPlugin {
         return protocol + divideUpstream.getUpstreamUrl().trim();
     }
 
+    /**
+     * return plugin type.
+     *
+     * @return {@linkplain PluginTypeEnum}
+     */
+    @Override
+    public PluginTypeEnum pluginType() {
+        return PluginTypeEnum.FUNCTION;
+    }
+
+    @Override
+    public int getOrder() {
+        return PluginEnum.DIVIDE.getCode();
+    }
+
     @Override
     public String named() {
         return PluginEnum.DIVIDE.getName();
@@ -149,21 +164,6 @@ public class DividePlugin extends AbstractSoulPlugin {
     public Boolean skip(final ServerWebExchange exchange) {
         final RequestDTO body = exchange.getAttribute(Constants.REQUESTDTO);
         return !Objects.equals(Objects.requireNonNull(body).getRpcType(), RpcTypeEnum.HTTP.getName());
-    }
-
-    /**
-     * return plugin type.
-     *
-     * @return {@linkplain PluginTypeEnum}
-     */
-    @Override
-    public PluginTypeEnum pluginType() {
-        return PluginTypeEnum.FUNCTION;
-    }
-
-    @Override
-    public int getOrder() {
-        return PluginEnum.DIVIDE.getCode();
     }
 
 }

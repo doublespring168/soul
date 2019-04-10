@@ -63,16 +63,6 @@ public class MonitorPlugin extends AbstractSoulPlugin {
         return chain.execute(exchange);
     }
 
-    @Override
-    public String named() {
-        return PluginEnum.MONITOR.getName();
-    }
-
-    @Override
-    public int getOrder() {
-        return PluginEnum.MONITOR.getCode();
-    }
-
     private MonitorDO buildMonitorData(final ServerWebExchange exchange) {
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
         MonitorDO visitorDO = new MonitorDO();
@@ -99,5 +89,15 @@ public class MonitorPlugin extends AbstractSoulPlugin {
     @Override
     public PluginTypeEnum pluginType() {
         return PluginTypeEnum.LAST;
+    }
+
+    @Override
+    public int getOrder() {
+        return PluginEnum.MONITOR.getCode();
+    }
+
+    @Override
+    public String named() {
+        return PluginEnum.MONITOR.getName();
     }
 }

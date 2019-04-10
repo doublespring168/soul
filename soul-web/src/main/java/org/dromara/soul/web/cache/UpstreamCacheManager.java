@@ -35,12 +35,7 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * this is divide  http url upstream.
@@ -67,6 +62,28 @@ public class UpstreamCacheManager {
     private Integer scheduledTime;
 
     /**
+     * Remove by key.
+     *
+     * @param key the key
+     */
+    static void removeByKey(final String key) {
+        UPSTREAM_MAP.remove(key);
+    }
+
+    /**
+     * Submit.
+     *
+     * @param selectorZkDTO the selector zk dto
+     */
+    static void submit(final SelectorZkDTO selectorZkDTO) {
+        try {
+            BLOCKING_QUEUE.put(selectorZkDTO);
+        } catch (InterruptedException e) {
+            LOGGER.error(e.getMessage());
+        }
+    }
+
+    /**
      * Find upstream list by selector id list.
      *
      * @param selectorId the selector id
@@ -74,15 +91,6 @@ public class UpstreamCacheManager {
      */
     public List<DivideUpstream> findUpstreamListBySelectorId(final String selectorId) {
         return UPSTREAM_MAP.get(selectorId);
-    }
-
-    /**
-     * Remove by key.
-     *
-     * @param key the key
-     */
-    static void removeByKey(final String key) {
-        UPSTREAM_MAP.remove(key);
     }
 
     /**
@@ -107,34 +115,6 @@ public class UpstreamCacheManager {
         }
     }
 
-
-    /**
-     * Submit.
-     *
-     * @param selectorZkDTO the selector zk dto
-     */
-    static void submit(final SelectorZkDTO selectorZkDTO) {
-        try {
-            BLOCKING_QUEUE.put(selectorZkDTO);
-        } catch (InterruptedException e) {
-            LOGGER.error(e.getMessage());
-        }
-    }
-
-    /**
-     * Execute.
-     *
-     * @param selectorZkDTO the selector zk dto
-     */
-    public void execute(final SelectorZkDTO selectorZkDTO) {
-        final List<DivideUpstream> upstreamList =
-                GsonUtils.getInstance().fromList(selectorZkDTO.getHandle(), DivideUpstream[].class);
-        if (CollectionUtils.isNotEmpty(upstreamList)) {
-            SCHEDULED_MAP.put(selectorZkDTO.getId(), upstreamList);
-            UPSTREAM_MAP.put(selectorZkDTO.getId(), check(upstreamList));
-        }
-    }
-
     private void scheduled() {
         if (SCHEDULED_MAP.size() > 0) {
             SCHEDULED_MAP.forEach((k, v) -> UPSTREAM_MAP.put(k, check(v)));
@@ -150,6 +130,20 @@ public class UpstreamCacheManager {
             }
         }
         return resultList;
+    }
+
+    /**
+     * Execute.
+     *
+     * @param selectorZkDTO the selector zk dto
+     */
+    public void execute(final SelectorZkDTO selectorZkDTO) {
+        final List<DivideUpstream> upstreamList =
+                GsonUtils.getInstance().fromList(selectorZkDTO.getHandle(), DivideUpstream[].class);
+        if (CollectionUtils.isNotEmpty(upstreamList)) {
+            SCHEDULED_MAP.put(selectorZkDTO.getId(), upstreamList);
+            UPSTREAM_MAP.put(selectorZkDTO.getId(), check(upstreamList));
+        }
     }
 
     /**

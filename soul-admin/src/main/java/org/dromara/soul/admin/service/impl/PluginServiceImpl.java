@@ -25,18 +25,10 @@ import org.dromara.soul.admin.dto.PluginDTO;
 import org.dromara.soul.admin.entity.PluginDO;
 import org.dromara.soul.admin.entity.RuleDO;
 import org.dromara.soul.admin.entity.SelectorDO;
-import org.dromara.soul.admin.mapper.PluginMapper;
-import org.dromara.soul.admin.mapper.RuleConditionMapper;
-import org.dromara.soul.admin.mapper.RuleMapper;
-import org.dromara.soul.admin.mapper.SelectorConditionMapper;
-import org.dromara.soul.admin.mapper.SelectorMapper;
+import org.dromara.soul.admin.mapper.*;
 import org.dromara.soul.admin.page.CommonPager;
 import org.dromara.soul.admin.page.PageParameter;
-import org.dromara.soul.admin.query.PluginQuery;
-import org.dromara.soul.admin.query.RuleConditionQuery;
-import org.dromara.soul.admin.query.RuleQuery;
-import org.dromara.soul.admin.query.SelectorConditionQuery;
-import org.dromara.soul.admin.query.SelectorQuery;
+import org.dromara.soul.admin.query.*;
 import org.dromara.soul.admin.service.PluginService;
 import org.dromara.soul.admin.vo.PluginVO;
 import org.dromara.soul.common.constant.AdminConstants;
@@ -66,14 +58,10 @@ public class PluginServiceImpl implements PluginService {
     private final PluginMapper pluginMapper;
 
     private final SelectorMapper selectorMapper;
-
-    private SelectorConditionMapper selectorConditionMapper;
-
     private final RuleMapper ruleMapper;
-
     private final RuleConditionMapper ruleConditionMapper;
-
     private final ZkClient zkClient;
+    private SelectorConditionMapper selectorConditionMapper;
 
     @Autowired(required = false)
     public PluginServiceImpl(final PluginMapper pluginMapper,
@@ -182,30 +170,6 @@ public class PluginServiceImpl implements PluginService {
         return "";
     }
 
-    @Override
-    public String enabled(final List<String> ids, final Boolean enabled) {
-        for (String id : ids) {
-            PluginDO pluginDO = pluginMapper.selectById(id);
-            if (Objects.isNull(pluginDO)) {
-                return AdminConstants.SYS_PLUGIN_ID_NOT_EXIST;
-            }
-            pluginDO.setDateUpdated(new Timestamp(System.currentTimeMillis()));
-            pluginDO.setEnabled(enabled);
-
-            pluginMapper.updateEnable(pluginDO);
-
-            String pluginPath = ZkPathConstants.buildPluginPath(pluginDO.getName());
-            if (!zkClient.exists(pluginPath)) {
-                zkClient.createPersistent(pluginPath, true);
-            }
-            zkClient.writeData(pluginPath, new PluginZkDTO(pluginDO.getId(),
-                    pluginDO.getName(), pluginDO.getRole(), pluginDO.getEnabled()));
-
-        }
-        return "";
-    }
-
-
     /**
      * find plugin by id.
      *
@@ -250,7 +214,6 @@ public class PluginServiceImpl implements PluginService {
         return 0;
     }
 
-
     /**
      * sync plugins.
      *
@@ -289,6 +252,28 @@ public class PluginServiceImpl implements PluginService {
         return 0;
     }
 
+    @Override
+    public String enabled(final List<String> ids, final Boolean enabled) {
+        for (String id : ids) {
+            PluginDO pluginDO = pluginMapper.selectById(id);
+            if (Objects.isNull(pluginDO)) {
+                return AdminConstants.SYS_PLUGIN_ID_NOT_EXIST;
+            }
+            pluginDO.setDateUpdated(new Timestamp(System.currentTimeMillis()));
+            pluginDO.setEnabled(enabled);
+
+            pluginMapper.updateEnable(pluginDO);
+
+            String pluginPath = ZkPathConstants.buildPluginPath(pluginDO.getName());
+            if (!zkClient.exists(pluginPath)) {
+                zkClient.createPersistent(pluginPath, true);
+            }
+            zkClient.writeData(pluginPath, new PluginZkDTO(pluginDO.getId(),
+                    pluginDO.getName(), pluginDO.getRole(), pluginDO.getEnabled()));
+
+        }
+        return "";
+    }
 
     /**
      * sync plugin.

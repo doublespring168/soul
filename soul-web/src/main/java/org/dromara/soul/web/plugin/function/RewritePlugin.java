@@ -61,16 +61,6 @@ public class RewritePlugin extends AbstractSoulPlugin {
         super(zookeeperCacheManager);
     }
 
-    /**
-     * acquire plugin name.
-     *
-     * @return plugin name.
-     */
-    @Override
-    public String named() {
-        return PluginEnum.REWRITE.getName();
-    }
-
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
 
@@ -86,12 +76,6 @@ public class RewritePlugin extends AbstractSoulPlugin {
         return chain.execute(exchange);
     }
 
-    @Override
-    public Boolean skip(final ServerWebExchange exchange) {
-        final RequestDTO body = exchange.getAttribute(Constants.REQUESTDTO);
-        return Objects.equals(Objects.requireNonNull(body).getRpcType(), RpcTypeEnum.DUBBO.getName());
-    }
-
     /**
      * return plugin type.
      *
@@ -105,5 +89,21 @@ public class RewritePlugin extends AbstractSoulPlugin {
     @Override
     public int getOrder() {
         return PluginEnum.REWRITE.getCode();
+    }
+
+    /**
+     * acquire plugin name.
+     *
+     * @return plugin name.
+     */
+    @Override
+    public String named() {
+        return PluginEnum.REWRITE.getName();
+    }
+
+    @Override
+    public Boolean skip(final ServerWebExchange exchange) {
+        final RequestDTO body = exchange.getAttribute(Constants.REQUESTDTO);
+        return Objects.equals(Objects.requireNonNull(body).getRpcType(), RpcTypeEnum.DUBBO.getName());
     }
 }

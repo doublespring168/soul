@@ -58,11 +58,6 @@ public class RateLimiterPlugin extends AbstractSoulPlugin {
         this.redisRateLimiter = redisRateLimiter;
     }
 
-    @Override
-    public String named() {
-        return PluginEnum.RATE_LIMITER.getName();
-    }
-
     /**
      * return plugin type.
      *
@@ -76,6 +71,11 @@ public class RateLimiterPlugin extends AbstractSoulPlugin {
     @Override
     public int getOrder() {
         return PluginEnum.RATE_LIMITER.getCode();
+    }
+
+    @Override
+    public String named() {
+        return PluginEnum.RATE_LIMITER.getName();
     }
 
     @Override

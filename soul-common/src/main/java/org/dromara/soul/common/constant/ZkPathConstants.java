@@ -36,13 +36,11 @@ public final class ZkPathConstants implements Constants {
     public static final String SELECTOR_JOIN_RULE = "-";
 
     public static final String PLUGIN_PARENT = "/soul/plugin";
-
-    private static final String RULE_PARENT = "/soul/rule";
-
     /**
      * The constant APP_AUTH_PARENT.
      */
     public static final String APP_AUTH_PARENT = "/soul/auth";
+    private static final String RULE_PARENT = "/soul/rule";
 
     /**
      * acquire app_auth_path.
@@ -95,16 +93,6 @@ public final class ZkPathConstants implements Constants {
     }
 
     /**
-     * buildRuleParentPath.
-     *
-     * @param pluginName pluginName
-     * @return zk rule parent path.
-     */
-    public static String buildRuleParentPath(final String pluginName) {
-        return String.join("/", RULE_PARENT, pluginName);
-    }
-
-    /**
      * buildRulePath.
      *
      * @param pluginName pluginName
@@ -114,6 +102,16 @@ public final class ZkPathConstants implements Constants {
      */
     public static String buildRulePath(final String pluginName, final String selectorId, final String ruleId) {
         return String.join("/", buildRuleParentPath(pluginName), selectorId + SELECTOR_JOIN_RULE + ruleId);
+    }
+
+    /**
+     * buildRuleParentPath.
+     *
+     * @param pluginName pluginName
+     * @return zk rule parent path.
+     */
+    public static String buildRuleParentPath(final String pluginName) {
+        return String.join("/", RULE_PARENT, pluginName);
     }
 
 }

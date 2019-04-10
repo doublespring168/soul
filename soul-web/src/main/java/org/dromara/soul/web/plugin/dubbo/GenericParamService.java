@@ -25,6 +25,7 @@ import java.util.Map;
 /**
  * The interface Generic param service.
  * This service is used to construct the parameters required for the dubbo generalization.
+ *
  * @author xiaoyu(Myth)
  */
 public interface GenericParamService {

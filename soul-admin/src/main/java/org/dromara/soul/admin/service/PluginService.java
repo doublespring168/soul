@@ -84,7 +84,7 @@ public interface PluginService {
     /**
      * Enabled string.
      *
-     * @param ids    the ids
+     * @param ids     the ids
      * @param enabled the enable
      * @return the string
      */

@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 /**
  * LogUtils.
+ *
  * @author xiaoyu
  */
 public final class LogUtils {
@@ -37,6 +38,7 @@ public final class LogUtils {
 
     /**
      * getInstance.
+     *
      * @return LogUtils
      */
     public static LogUtils getInstance() {
@@ -46,6 +48,7 @@ public final class LogUtils {
 
     /**
      * debug log.
+     *
      * @param logger   logger
      * @param format   format
      * @param supplier {@linkplain Supplier}
@@ -58,8 +61,9 @@ public final class LogUtils {
 
     /**
      * debug log.
+     *
      * @param logger   logger
-     * @param supplier  {@linkplain Supplier}
+     * @param supplier {@linkplain Supplier}
      */
     public static void debug(final Logger logger, final Supplier<Object> supplier) {
         if (logger.isDebugEnabled()) {

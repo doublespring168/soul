@@ -59,9 +59,8 @@ public final class SoulWebHandler implements WebHandler {
 
     private static class DefaultSoulPluginChain implements SoulPluginChain {
 
-        private int index;
-
         private final List<SoulPlugin> plugins;
+        private int index;
 
         /**
          * Instantiates a new Default soul plugin chain.

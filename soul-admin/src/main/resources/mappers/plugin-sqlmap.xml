@@ -116,7 +116,6 @@
     </update>
 
 
-
     <update id="updateSelective" parameterType="org.dromara.soul.admin.entity.PluginDO">
         update plugin
         <set>

@@ -63,16 +63,6 @@ public class WafPlugin extends AbstractSoulPlugin {
         super(zookeeperCacheManager);
     }
 
-    /**
-     * acquire plugin name.
-     *
-     * @return plugin name.
-     */
-    @Override
-    public String named() {
-        return PluginEnum.WAF.getName();
-    }
-
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
 
@@ -109,5 +99,15 @@ public class WafPlugin extends AbstractSoulPlugin {
     @Override
     public int getOrder() {
         return PluginEnum.WAF.getCode();
+    }
+
+    /**
+     * acquire plugin name.
+     *
+     * @return plugin name.
+     */
+    @Override
+    public String named() {
+        return PluginEnum.WAF.getName();
     }
 }

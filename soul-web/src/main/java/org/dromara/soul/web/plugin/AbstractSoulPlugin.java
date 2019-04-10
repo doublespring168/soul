@@ -58,18 +58,6 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
     private final ZookeeperCacheManager zookeeperCacheManager;
 
     /**
-     * this is Template Method child has Implement your own logic.
-     *
-     * @param exchange exchange the current server exchange {@linkplain ServerWebExchange}
-     * @param chain    chain the current chain  {@linkplain ServerWebExchange}
-     * @param selector selector    {@linkplain SelectorZkDTO}
-     * @param rule     rule    {@linkplain RuleZkDTO}
-     * @return {@code Mono<Void>} to indicate when request handling is complete
-     */
-    protected abstract Mono<Void> doExecute(ServerWebExchange exchange, SoulPluginChain chain, SelectorZkDTO selector, RuleZkDTO rule);
-
-
-    /**
      * Process the Web request and (optionally) delegate to the next
      * {@code WebFilter} through the given {@link SoulPluginChain}.
      *
@@ -152,4 +140,15 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
                         .match(ruleZkDTO.getConditionZkDTOList(), exchange))
                 .findFirst().orElse(null);
     }
+
+    /**
+     * this is Template Method child has Implement your own logic.
+     *
+     * @param exchange exchange the current server exchange {@linkplain ServerWebExchange}
+     * @param chain    chain the current chain  {@linkplain ServerWebExchange}
+     * @param selector selector    {@linkplain SelectorZkDTO}
+     * @param rule     rule    {@linkplain RuleZkDTO}
+     * @return {@code Mono<Void>} to indicate when request handling is complete
+     */
+    protected abstract Mono<Void> doExecute(ServerWebExchange exchange, SoulPluginChain chain, SelectorZkDTO selector, RuleZkDTO rule);
 }

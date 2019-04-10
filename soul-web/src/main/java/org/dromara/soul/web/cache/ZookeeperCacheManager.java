@@ -137,10 +137,69 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
         });
     }
 
+    private void watchAppAuth() {
+        final String appAuthParent = ZkPathConstants.APP_AUTH_PARENT;
+        if (!zkClient.exists(appAuthParent)) {
+            zkClient.createPersistent(appAuthParent, true);
+        }
+        final List<String> childrenList = zkClient.getChildren(appAuthParent);
+        if (CollectionUtils.isNotEmpty(childrenList)) {
+            childrenList.forEach(children -> {
+                String realPath = buildRealPath(appAuthParent, children);
+                setAuthData(realPath);
+                subscribeAppAuthDataChanges(realPath);
+            });
+        }
+
+        zkClient.subscribeChildChanges(appAuthParent, (parentPath, currentChildren) -> {
+            if (CollectionUtils.isNotEmpty(currentChildren)) {
+                final List<String> addSubscribePath = addSubscribePath(childrenList, currentChildren);
+                addSubscribePath.stream().map(children -> {
+                    final String realPath = buildRealPath(parentPath, children);
+                    setAuthData(realPath);
+                    return realPath;
+                }).forEach(this::subscribeAppAuthDataChanges);
+            }
+        });
+    }
+
     private void loadPlugin(final String pluginName) {
         watcherPlugin(pluginName);
         watcherSelector(pluginName);
         watcherRule(pluginName);
+    }
+
+    private String buildRealPath(final String parent, final String children) {
+        return parent + "/" + children;
+    }
+
+    private void setAuthData(final String realPath) {
+        final AppAuthZkDTO appAuthZkDTO = zkClient.readData(realPath);
+        Optional.ofNullable(appAuthZkDTO)
+                .ifPresent(dto -> AUTH_MAP.put(dto.getAppKey(), dto));
+    }
+
+    private void subscribeAppAuthDataChanges(final String realPath) {
+        zkClient.subscribeDataChanges(realPath, new IZkDataListener() {
+            @Override
+            public void handleDataChange(final String dataPath, final Object data) {
+                Optional.ofNullable(data)
+                        .ifPresent(o -> AUTH_MAP.put(((AppAuthZkDTO) o).getAppKey(), (AppAuthZkDTO) o));
+            }
+
+            @Override
+            public void handleDataDeleted(final String dataPath) {
+                final String key = dataPath.substring(ZkPathConstants.APP_AUTH_PARENT.length() + 1);
+                AUTH_MAP.remove(key);
+            }
+        });
+    }
+
+    private List<String> addSubscribePath(final List<String> alreadyChildren, final List<String> currentChildren) {
+        if (CollectionUtils.isEmpty(alreadyChildren)) {
+            return currentChildren;
+        }
+        return currentChildren.stream().filter(current -> alreadyChildren.stream().noneMatch(current::equals)).collect(Collectors.toList());
     }
 
     private void watcherPlugin(final String pluginName) {
@@ -225,6 +284,68 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
         });
     }
 
+    private void setSelectorData(final String realPath) {
+        final SelectorZkDTO selectorZkDTO = zkClient.readData(realPath);
+        Optional.ofNullable(selectorZkDTO)
+                .ifPresent(dto -> {
+                    final String key = dto.getPluginName();
+                    setSelectorMapByKey(key, dto);
+                });
+    }
+
+    private void subscribeSelectorDataChanges(final String path) {
+        zkClient.subscribeDataChanges(path, new IZkDataListener() {
+            @Override
+            public void handleDataChange(final String dataPath, final Object data) {
+                Optional.ofNullable(data).ifPresent(d -> selectorDataChange((SelectorZkDTO) d));
+            }
+
+            @Override
+            public void handleDataDeleted(final String dataPath) {
+                //规定路径 key-id key为selectorId, id为规则id
+                final String id = dataPath.substring(dataPath.lastIndexOf("/") + 1);
+                final String str = dataPath.substring(ZkPathConstants.SELECTOR_PARENT.length());
+                final String key = str.substring(1, str.length() - id.length() - 1);
+                Optional.of(key).ifPresent(k -> {
+                    final List<SelectorZkDTO> selectorZkDTOList = SELECTOR_MAP.get(k);
+                    selectorZkDTOList.removeIf(e -> e.getId().equals(id));
+                });
+            }
+        });
+    }
+
+    private void setRuleData(final String rulePath) {
+        final RuleZkDTO ruleZkDTO = zkClient.readData(rulePath);
+        Optional.ofNullable(ruleZkDTO)
+                .ifPresent(dto -> {
+                    String key = dto.getSelectorId();
+                    setRuleMapByKey(key, ruleZkDTO);
+                });
+    }
+
+    private void subscribeRuleDataChanges(final String path) {
+        zkClient.subscribeDataChanges(path, new IZkDataListener() {
+            @Override
+            public void handleDataChange(final String dataPath, final Object data) {
+                Optional.ofNullable(data).ifPresent(d -> ruleDataChange((RuleZkDTO) d));
+            }
+
+            @Override
+            public void handleDataDeleted(final String dataPath) {
+                //规定路径 key-id key为selectorId, id为规则id
+                final List<String> list = Splitter.on(ZkPathConstants.SELECTOR_JOIN_RULE)
+                        .splitToList(dataPath.substring(dataPath.lastIndexOf("/") + 1));
+                final String key = list.get(0);
+                final String id = list.get(1);
+                UpstreamCacheManager.removeByKey(id);
+                Optional.ofNullable(key).ifPresent(k -> {
+                    final List<RuleZkDTO> ruleZkDTOList = RULE_MAP.get(k);
+                    ruleZkDTOList.removeIf(e -> e.getId().equals(id));
+                });
+            }
+        });
+    }
+
     /**
      * set  SelectorMap by key.
      *
@@ -254,43 +375,23 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
                 });
     }
 
-    private void subscribeSelectorDataChanges(final String path) {
-        zkClient.subscribeDataChanges(path, new IZkDataListener() {
-            @Override
-            public void handleDataChange(final String dataPath, final Object data) {
-                Optional.ofNullable(data).ifPresent(d -> selectorDataChange((SelectorZkDTO) d));
-            }
-
-            @Override
-            public void handleDataDeleted(final String dataPath) {
-                //规定路径 key-id key为selectorId, id为规则id
-                final String id = dataPath.substring(dataPath.lastIndexOf("/") + 1);
-                final String str = dataPath.substring(ZkPathConstants.SELECTOR_PARENT.length());
-                final String key = str.substring(1, str.length() - id.length() - 1);
-                Optional.of(key).ifPresent(k -> {
-                    final List<SelectorZkDTO> selectorZkDTOList = SELECTOR_MAP.get(k);
-                    selectorZkDTOList.removeIf(e -> e.getId().equals(id));
-                });
-            }
-        });
-    }
-
-    private void setSelectorData(final String realPath) {
-        final SelectorZkDTO selectorZkDTO = zkClient.readData(realPath);
-        Optional.ofNullable(selectorZkDTO)
-                .ifPresent(dto -> {
-                    final String key = dto.getPluginName();
-                    setSelectorMapByKey(key, dto);
-                });
-    }
-
-    private void setRuleData(final String rulePath) {
-        final RuleZkDTO ruleZkDTO = zkClient.readData(rulePath);
-        Optional.ofNullable(ruleZkDTO)
-                .ifPresent(dto -> {
-                    String key = dto.getSelectorId();
-                    setRuleMapByKey(key, ruleZkDTO);
-                });
+    private void selectorDataChange(final SelectorZkDTO dto) {
+        if (dto.getPluginName().equals(PluginEnum.DIVIDE.getName())) {
+            UpstreamCacheManager.submit(dto);
+        }
+        final String key = dto.getPluginName();
+        final List<SelectorZkDTO> selectorZkDTOList = SELECTOR_MAP.get(key);
+        if (CollectionUtils.isNotEmpty(selectorZkDTOList)) {
+            final List<SelectorZkDTO> resultList =
+                    selectorZkDTOList.stream().filter(r -> !r.getId().equals(dto.getId())).collect(Collectors.toList());
+            resultList.add(dto);
+            final List<SelectorZkDTO> collect = resultList.stream()
+                    .sorted(Comparator.comparing(SelectorZkDTO::getSort))
+                    .collect(Collectors.toList());
+            SELECTOR_MAP.put(key, collect);
+        } else {
+            SELECTOR_MAP.put(key, Lists.newArrayList(dto));
+        }
     }
 
     private void setRuleMapByKey(final String key, final RuleZkDTO ruleZkDTO) {
@@ -314,48 +415,6 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
                 });
     }
 
-    private void subscribeRuleDataChanges(final String path) {
-        zkClient.subscribeDataChanges(path, new IZkDataListener() {
-            @Override
-            public void handleDataChange(final String dataPath, final Object data) {
-                Optional.ofNullable(data).ifPresent(d -> ruleDataChange((RuleZkDTO) d));
-            }
-
-            @Override
-            public void handleDataDeleted(final String dataPath) {
-                //规定路径 key-id key为selectorId, id为规则id
-                final List<String> list = Splitter.on(ZkPathConstants.SELECTOR_JOIN_RULE)
-                        .splitToList(dataPath.substring(dataPath.lastIndexOf("/") + 1));
-                final String key = list.get(0);
-                final String id = list.get(1);
-                UpstreamCacheManager.removeByKey(id);
-                Optional.ofNullable(key).ifPresent(k -> {
-                    final List<RuleZkDTO> ruleZkDTOList = RULE_MAP.get(k);
-                    ruleZkDTOList.removeIf(e -> e.getId().equals(id));
-                });
-            }
-        });
-    }
-
-    private void selectorDataChange(final SelectorZkDTO dto) {
-        if (dto.getPluginName().equals(PluginEnum.DIVIDE.getName())) {
-            UpstreamCacheManager.submit(dto);
-        }
-        final String key = dto.getPluginName();
-        final List<SelectorZkDTO> selectorZkDTOList = SELECTOR_MAP.get(key);
-        if (CollectionUtils.isNotEmpty(selectorZkDTOList)) {
-            final List<SelectorZkDTO> resultList =
-                    selectorZkDTOList.stream().filter(r -> !r.getId().equals(dto.getId())).collect(Collectors.toList());
-            resultList.add(dto);
-            final List<SelectorZkDTO> collect = resultList.stream()
-                    .sorted(Comparator.comparing(SelectorZkDTO::getSort))
-                    .collect(Collectors.toList());
-            SELECTOR_MAP.put(key, collect);
-        } else {
-            SELECTOR_MAP.put(key, Lists.newArrayList(dto));
-        }
-    }
-
     private void ruleDataChange(final RuleZkDTO dto) {
         final String key = dto.getSelectorId();
         final List<RuleZkDTO> ruleZkDTOList = RULE_MAP.get(key);
@@ -371,65 +430,6 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
         } else {
             RULE_MAP.put(key, Lists.newArrayList(dto));
         }
-    }
-
-    private void watchAppAuth() {
-        final String appAuthParent = ZkPathConstants.APP_AUTH_PARENT;
-        if (!zkClient.exists(appAuthParent)) {
-            zkClient.createPersistent(appAuthParent, true);
-        }
-        final List<String> childrenList = zkClient.getChildren(appAuthParent);
-        if (CollectionUtils.isNotEmpty(childrenList)) {
-            childrenList.forEach(children -> {
-                String realPath = buildRealPath(appAuthParent, children);
-                setAuthData(realPath);
-                subscribeAppAuthDataChanges(realPath);
-            });
-        }
-
-        zkClient.subscribeChildChanges(appAuthParent, (parentPath, currentChildren) -> {
-            if (CollectionUtils.isNotEmpty(currentChildren)) {
-                final List<String> addSubscribePath = addSubscribePath(childrenList, currentChildren);
-                addSubscribePath.stream().map(children -> {
-                    final String realPath = buildRealPath(parentPath, children);
-                    setAuthData(realPath);
-                    return realPath;
-                }).forEach(this::subscribeAppAuthDataChanges);
-            }
-        });
-    }
-
-    private void setAuthData(final String realPath) {
-        final AppAuthZkDTO appAuthZkDTO = zkClient.readData(realPath);
-        Optional.ofNullable(appAuthZkDTO)
-                .ifPresent(dto -> AUTH_MAP.put(dto.getAppKey(), dto));
-    }
-
-    private void subscribeAppAuthDataChanges(final String realPath) {
-        zkClient.subscribeDataChanges(realPath, new IZkDataListener() {
-            @Override
-            public void handleDataChange(final String dataPath, final Object data) {
-                Optional.ofNullable(data)
-                        .ifPresent(o -> AUTH_MAP.put(((AppAuthZkDTO) o).getAppKey(), (AppAuthZkDTO) o));
-            }
-
-            @Override
-            public void handleDataDeleted(final String dataPath) {
-                final String key = dataPath.substring(ZkPathConstants.APP_AUTH_PARENT.length() + 1);
-                AUTH_MAP.remove(key);
-            }
-        });
-    }
-
-    private List<String> addSubscribePath(final List<String> alreadyChildren, final List<String> currentChildren) {
-        if (CollectionUtils.isEmpty(alreadyChildren)) {
-            return currentChildren;
-        }
-        return currentChildren.stream().filter(current -> alreadyChildren.stream().noneMatch(current::equals)).collect(Collectors.toList());
-    }
-
-    private String buildRealPath(final String parent, final String children) {
-        return parent + "/" + children;
     }
 
     @Override

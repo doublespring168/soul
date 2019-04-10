@@ -32,16 +32,6 @@ import reactor.core.publisher.Mono;
  */
 public class GlobalPlugin implements SoulPlugin {
 
-    @Override
-    public String named() {
-        return PluginEnum.GLOBAL.getName();
-    }
-
-    @Override
-    public int getOrder() {
-        return PluginEnum.GLOBAL.getCode();
-    }
-
     /**
      * Process the Web request and (optionally) delegate to the next
      * {@code WebFilter} through the given {@link SoulPluginChain}.
@@ -63,5 +53,15 @@ public class GlobalPlugin implements SoulPlugin {
     @Override
     public PluginTypeEnum pluginType() {
         return PluginTypeEnum.BEFORE;
+    }
+
+    @Override
+    public int getOrder() {
+        return PluginEnum.GLOBAL.getCode();
+    }
+
+    @Override
+    public String named() {
+        return PluginEnum.GLOBAL.getName();
     }
 }

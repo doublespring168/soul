@@ -43,10 +43,6 @@ public class ProtostuffSerializer implements ZkSerializer {
 
     private static final Objenesis OBJENESIS = new ObjenesisStd(true);
 
-    private static <T> Schema<T> getSchema(final Class<T> cls) {
-        return (Schema<T>) CACHED_SCHEMA.get(cls);
-    }
-
     @Override
     public byte[] serialize(final Object obj) {
         Class cls = obj.getClass();
@@ -61,6 +57,10 @@ public class ProtostuffSerializer implements ZkSerializer {
             buffer.clear();
         }
         return outputStream.toByteArray();
+    }
+
+    private static <T> Schema<T> getSchema(final Class<T> cls) {
+        return (Schema<T>) CACHED_SCHEMA.get(cls);
     }
 
     @Override
