@@ -11,6 +11,12 @@
     <artifactId>soul-admin</artifactId>
     <dependencies>
         <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </dependency>
+
+
+        <dependency>
             <groupId>org.dromara</groupId>
             <artifactId>soul-common</artifactId>
         </dependency>
@@ -18,6 +24,12 @@
         <dependency>
             <groupId>org.dromara</groupId>
             <artifactId>soul-configuration</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>fastjson</artifactId>
+                    <groupId>com.alibaba</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -56,6 +68,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>objenesis</artifactId>
+                    <groupId>org.objenesis</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

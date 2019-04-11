@@ -7,8 +7,8 @@ spring:
     allow-bean-definition-overriding: true
   redis:
     host: localhost
-    password: 123456
-    port: 6379
+    #password: 123456
+    port: 6479
   influxdb:
     url: http://localhost:8086
     username: test
