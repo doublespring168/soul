@@ -149,16 +149,6 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
                 .findFirst().orElse(null);
     }
 
-    @Override
-    public PluginTypeEnum getPluginType() {
-        return pluginType();
-    }
-
-    @Override
-    public String getNamed() {
-        return named();
-    }
-
     /**
      * this is Template Method child has Implement your own logic.
      *
@@ -169,4 +159,14 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
      * @return {@code Mono<Void>} to indicate when request handling is complete
      */
     protected abstract Mono<Void> doExecute(ServerWebExchange exchange, SoulPluginChain chain, SelectorZkDTO selector, RuleZkDTO rule);
+
+    @Override
+    public PluginTypeEnum getPluginType() {
+        return pluginType();
+    }
+
+    @Override
+    public String getNamed() {
+        return named();
+    }
 }

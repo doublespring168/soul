@@ -5,6 +5,11 @@ import reactor.core.scheduler.Schedulers;
 
 public class FluxAndMono {
 
+    public static void main(String[] args) throws Exception {
+        FluxAndMono fluxAndMono = new FluxAndMono();
+        fluxAndMono.test01();
+    }
+
     public void test01() throws Exception {
         Flux.create(sink -> {
             sink.next("sink：" + Thread.currentThread().getName());
@@ -17,10 +22,5 @@ public class FluxAndMono {
                 .forEach(System.out::println);
 
 
-    }
-
-    public static void main(String[] args) throws Exception {
-        FluxAndMono fluxAndMono = new FluxAndMono();
-        fluxAndMono.test01();
     }
 }
