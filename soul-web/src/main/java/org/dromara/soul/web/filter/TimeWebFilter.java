@@ -18,7 +18,6 @@
 
 package org.dromara.soul.web.filter;
 
-import org.apache.commons.lang3.StringUtils;
 import org.dromara.soul.common.constant.Constants;
 import org.dromara.soul.common.result.SoulResult;
 import org.dromara.soul.common.utils.DateUtils;
@@ -30,6 +29,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.time.LocalDateTime;
 
@@ -48,16 +48,20 @@ public class TimeWebFilter extends AbstractWebFilter {
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
         assert requestDTO != null;
         final String timestamp = requestDTO.getTimestamp();
-        if (StringUtils.isBlank(timestamp)) {
-            return Mono.just(false);
-        }
+
+        U.checkEmpty(timestamp, "timestamp is null");
+
+        //if (StringUtils.isBlank(timestamp)) {
+        //    return Mono.just(false);
+        //}
         final LocalDateTime start = DateUtils.parseLocalDateTime(timestamp);
         final LocalDateTime now = LocalDateTime.now();
         final long between = DateUtils.acquireMinutesBetween(start, now);
-        if (between < timeDelay) {
-            return Mono.just(true);
+        if (between > timeDelay) {
+            U.throwTimeException("Request is overtime");
         }
-        return Mono.just(false);
+
+        return Mono.just(true);
     }
 
     @Override

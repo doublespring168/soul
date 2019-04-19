@@ -18,7 +18,7 @@
 
 package org.dromara.soul.web.filter;
 
-import org.apache.commons.lang3.StringUtils;
+import cn.hutool.log.StaticLog;
 import org.dromara.soul.common.constant.Constants;
 import org.dromara.soul.common.enums.HttpMethodEnum;
 import org.dromara.soul.common.enums.RpcTypeEnum;
@@ -31,6 +31,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.Objects;
 
@@ -46,9 +47,8 @@ public class ParamWebFilter extends AbstractWebFilter {
         final ServerHttpRequest request = exchange.getRequest();
         final RequestDTO requestDTO = RequestDTO.transform(request);
         if (verify(requestDTO, exchange)) {
+            StaticLog.debug("入参合法");
             exchange.getAttributes().put(Constants.REQUESTDTO, requestDTO);
-        } else {
-            return Mono.just(false);
         }
         return Mono.just(true);
     }
@@ -57,29 +57,44 @@ public class ParamWebFilter extends AbstractWebFilter {
     protected Mono<Void> doDenyResponse(final ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.BAD_REQUEST);
-        final SoulResult result = SoulResult.error("you param is error please check with doc!");
-        return response.writeWith(Mono.just(response.bufferFactory()
-                .wrap(GsonUtils.getInstance().toJson(result).getBytes())));
+        final SoulResult soulResult = SoulResult.error("Your params is invalid, please check with api doc.");
+        StaticLog.debug("返回入参非法");
+        Mono<Void> result = response.writeWith(
+                Mono.just(
+                        response.bufferFactory().wrap(GsonUtils.getInstance().toJson(soulResult).getBytes())
+                )
+        );
+        return result;
     }
 
     private Boolean verify(final RequestDTO requestDTO, final ServerWebExchange exchange) {
-        if (Objects.isNull(requestDTO)
-                || StringUtils.isBlank(requestDTO.getModule())
-                || StringUtils.isBlank(requestDTO.getMethod())) {
-            return false;
-        }
+
+        U.checkEmpty(requestDTO, "request params is null");
+        U.checkEmpty(requestDTO.getModule(), "headers[module] is null");
+        U.checkEmpty(requestDTO.getMethod(), "headers[method] is null");
+        //if (Objects.isNull(requestDTO)
+        //        || StringUtils.isBlank(requestDTO.getModule())
+        //        || StringUtils.isBlank(requestDTO.getMethod())) {
+        //    return false;
+        //}
         final RpcTypeEnum rpcTypeEnum = RpcTypeEnum.acquireByName(requestDTO.getRpcType());
-        if (Objects.isNull(rpcTypeEnum)) {
-            return false;
-        }
+        U.checkEmpty(rpcTypeEnum, "headers[rpcType] is null");
+
+        //if (Objects.isNull(rpcTypeEnum)) {
+        //    return false;
+        //}
         //if rpcType is dubbo
         if (Objects.equals(rpcTypeEnum.getName(), RpcTypeEnum.DUBBO.getName())) {
             final Object param = exchange.getAttributes().get(Constants.DUBBO_PARAMS);
-            return !Objects.isNull(param);
+            U.checkEmpty(param, "dubbo params is null");
+            //return !Objects.isNull(param);
         } else {
-            return !StringUtils.isBlank(requestDTO.getHttpMethod())
-                    && !Objects.isNull(HttpMethodEnum.acquireByName(requestDTO.getHttpMethod()));
+            U.checkEmpty(requestDTO.getHttpMethod(), "headers[httpMethod] is null");
+            U.checkEmpty(HttpMethodEnum.acquireByName(requestDTO.getHttpMethod()), "headers[httpMethod] is invalid");
+            //return !StringUtils.isBlank(requestDTO.getHttpMethod())
+            //        && !Objects.isNull(HttpMethodEnum.acquireByName(requestDTO.getHttpMethod()));
         }
+        return true;
     }
 
 }

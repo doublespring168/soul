@@ -47,7 +47,7 @@ public class GlobalPlugin extends ParentPlugin implements SoulPlugin {
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final SoulPluginChain chain) {
         Mono<Void> result = chain.execute(exchange);
-        StaticLog.debug("执行GlobalPlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
+        StaticLog.debug("执行GlobalPlugin", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
 
         return result;
     }

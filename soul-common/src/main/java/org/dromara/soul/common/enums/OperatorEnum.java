@@ -88,7 +88,7 @@ public enum OperatorEnum {
     public static OperatorEnum getOperatorEnumByAlias(final String alias) {
         return Arrays.stream(OperatorEnum.values())
                 .filter(e -> e.getAlias().equals(alias) && e.support).findFirst()
-                .orElseThrow(() -> new SoulException(" this  operator can not support!"));
+                .orElseThrow(() -> new SoulException(String.format("Operator [%s] not support", alias)));
 
     }
 }

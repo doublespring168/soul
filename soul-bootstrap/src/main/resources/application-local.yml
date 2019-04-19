@@ -48,7 +48,7 @@ logging:
     root: info
     org.springframework.boot: info
     org.apache.ibatis: info
-    org.dromara.soul.bonuspoint: info
+    org.dromara.soul.bonuspoint: debug
     org.dromara.soul.lottery: debug
     org.dromara.soul: debug
 

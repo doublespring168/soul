@@ -82,7 +82,7 @@ public class DividePlugin extends AbstractSoulPlugin {
 
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
-        StaticLog.debug("执行DividePlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "selector", JSON.toJSON(selector), "rule", JSON.toJSON(rule)));
+        StaticLog.debug("执行DividePlugin", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "selector", JSON.toJSON(selector), "rule", JSON.toJSON(rule)));
 
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
 

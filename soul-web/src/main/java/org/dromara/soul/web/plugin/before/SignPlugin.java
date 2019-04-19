@@ -84,12 +84,12 @@ public class SignPlugin extends AbstractSoulPlugin {
                             exchange.getResponse().bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())
                     )
             );
-            StaticLog.debug("执行SignPlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
+            StaticLog.debug("执行SignPlugin", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
 
             return result;
         }
         Mono<Void> result = chain.execute(exchange);
-        StaticLog.debug("执行SignPlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
+        StaticLog.debug("执行SignPlugin", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
         return result;
     }
 

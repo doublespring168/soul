@@ -16,32 +16,42 @@
  *
  */
 
-package org.dromara.soul.test.http.controller;
-
-
-import org.dromara.soul.test.http.dto.UserDTO;
-import org.springframework.web.bind.annotation.*;
+package org.dromara.soul.common.exception;
 
 /**
- * TestController.
- *
- * @author xiaoyu
+ * 功能说明：请求时间超时校验
+ * Author：spring
+ * Date：2019-04-19 17:07
  */
-@RestController
-@RequestMapping("/test")
-public class HttpTestController {
+public class TimeoutException extends RuntimeException {
 
+    private static final long serialVersionUID = 8068509879445395353L;
 
-    @PostMapping("/payment")
-    public UserDTO post(@ModelAttribute final UserDTO userDTO) {
-        return userDTO;
+    /**
+     * Instantiates a new Soul exception.
+     *
+     * @param e the e
+     */
+    public TimeoutException(final Throwable e) {
+        super(e);
     }
 
-
-    @GetMapping("/findByUserId")
-    public String findByUserId() {
-        return "helloWorld!";
+    /**
+     * Instantiates a new Soul exception.
+     *
+     * @param message the message
+     */
+    public TimeoutException(final String message) {
+        super(message);
     }
 
-
+    /**
+     * Instantiates a new Soul exception.
+     *
+     * @param message   the message
+     * @param throwable the throwable
+     */
+    public TimeoutException(final String message, final Throwable throwable) {
+        super(message, throwable);
+    }
 }

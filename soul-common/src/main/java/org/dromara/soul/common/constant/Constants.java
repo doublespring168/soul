@@ -133,37 +133,37 @@ public interface Constants {
     /**
      * The constant HTTP_ERROR_RESULT.
      */
-    String HTTP_ERROR_RESULT = "this is bad request or fuse ing please try again later";
+    String HTTP_ERROR_RESULT = "This request is bad or confusing, please try later";
 
     /**
      * The constant DUBBO_ERROR_RESULT.
      */
-    String DUBBO_ERROR_RESULT = "dubbo rpc have error or fuse ing please check your param and  try again later";
+    String DUBBO_ERROR_RESULT = "Dubbo rpc have error or confusing, please check your param and  try later";
 
     /**
      * The constant SPRING_CLOUD_ERROR_RESULT.
      */
-    String SPRING_CLOUD_ERROR_RESULT = "spring cloud rpc have error or fuse ing please check your param and  try again later";
+    String SPRING_CLOUD_ERROR_RESULT = "Spring cloud rpc have error or confusing, please check your param and try later";
 
     /**
      * The constant TIMEOUT_RESULT.
      */
-    String TIMEOUT_RESULT = "this request is time out  Please try again later";
+    String TIMEOUT_RESULT = "This request is time out, Please try later";
 
     /**
      * The constant UPSTREAM_NOT_FIND.
      */
-    String UPSTREAM_NOT_FIND = "this can not rule upstream please check you config!";
+    String UPSTREAM_NOT_FIND = "This request's rule can't be upstreamed, please check your config";
 
     /**
      * The constant TOO_MANY_REQUESTS.
      */
-    String TOO_MANY_REQUESTS = "the request is too fast please try again later";
+    String TOO_MANY_REQUESTS = "The request is too fast, please try later";
 
     /**
      * The constant SIGN_IS_NOT_PASS.
      */
-    String SIGN_IS_NOT_PASS = "sign is not pass,Please check you sign algorithm!";
+    String SIGN_IS_NOT_PASS = "Signing is invalid, Please check you sign algorithm";
 
     /**
      * The constant LINE_SEPARATOR.

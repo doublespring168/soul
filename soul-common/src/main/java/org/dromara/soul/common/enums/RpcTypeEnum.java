@@ -86,6 +86,6 @@ public enum RpcTypeEnum {
     public static RpcTypeEnum acquireByName(final String name) {
         return Arrays.stream(RpcTypeEnum.values())
                 .filter(e -> e.support && e.name.equals(name)).findFirst()
-                .orElseThrow(() -> new SoulException(" this rpc type can not support!"));
+                .orElseThrow(() -> new SoulException(String.format("Rpc type [%s] not support", name)));
     }
 }

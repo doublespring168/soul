@@ -78,7 +78,7 @@ public class WafPlugin extends AbstractSoulPlugin {
         if (Objects.isNull(wafHandle) || StringUtils.isBlank(wafHandle.getPermission())) {
             StaticLog.debug("waf handler can not config：{}", handle);
             Mono<Void> result = chain.execute(exchange);
-            StaticLog.debug("执行WafPlugin -> WafHandle参数不合法", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
+            StaticLog.debug("执行WafPlugin -> WafHandle参数不合法", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
             return result;
         }
         // if reject
@@ -90,11 +90,11 @@ public class WafPlugin extends AbstractSoulPlugin {
                             exchange.getResponse().bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())
                     )
             );
-            StaticLog.debug("执行WafPlugin -> 拒绝", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
+            StaticLog.debug("执行WafPlugin -> 拒绝", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
             return result;
         }
         Mono<Void> result = chain.execute(exchange);
-        StaticLog.debug("执行WafPlugin -> 放行", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
+        StaticLog.debug("执行WafPlugin -> 放行", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result)));
         return result;
     }
 

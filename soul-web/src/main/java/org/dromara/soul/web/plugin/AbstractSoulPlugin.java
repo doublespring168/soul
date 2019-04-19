@@ -71,7 +71,7 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
      */
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final SoulPluginChain chain) {
-        StaticLog.debug("执行责任链插件", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain)));
+        StaticLog.debug("执行责任链插件", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain)));
 
         final PluginZkDTO pluginZkDTO = zookeeperCacheManager.findPluginByName(named());
         if (!(skip(exchange) || pluginZkDTO == null || !pluginZkDTO.getEnabled())) {

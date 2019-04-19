@@ -19,22 +19,40 @@
 package org.dromara.soul.common.exception;
 
 /**
- * CommonErrorCode.
- *
- * @author xiaoyu
+ * 功能说明：ParamException
+ * 参数校验 exception
+ * Author：spring
+ * Date：2019-04-19 17:06
  */
-public class CommonErrorCode {
+public class ParamException extends RuntimeException {
+
+    private static final long serialVersionUID = 8068509879445395353L;
 
     /**
-     * The constant ERROR.
+     * Instantiates a new Soul exception.
+     *
+     * @param e the e
      */
-    public static final int ERROR = 500;
+    public ParamException(final Throwable e) {
+        super(e);
+    }
 
     /**
-     * The constant SUCCESSFUL.
+     * Instantiates a new Soul exception.
+     *
+     * @param message the message
      */
-    public static final int SUCCESSFUL = 200;
+    public ParamException(final String message) {
+        super(message);
+    }
 
-    public static final String ERROR_MSG = "Server exception!";
-
+    /**
+     * Instantiates a new Soul exception.
+     *
+     * @param message   the message
+     * @param throwable the throwable
+     */
+    public ParamException(final String message, final Throwable throwable) {
+        super(message, throwable);
+    }
 }

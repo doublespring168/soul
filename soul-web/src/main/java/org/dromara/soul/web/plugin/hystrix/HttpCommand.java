@@ -120,7 +120,7 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
                     .doOnError(e -> LogUtils.error(LOGGER, e::getMessage))
                     .timeout(Duration.ofMillis(timeout))
                     .flatMap(this::doNext);
-            StaticLog.debug("执行GET请求", U.format("uri", uri, "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+            StaticLog.debug("执行GET请求", U.format("uri", uri, "remoteAddress", exchange.getRequest().getRemoteAddress(), "result", JSON.toJSON(result)));
             return result;
         } else if (requestDTO.getHttpMethod().equals(HttpMethodEnum.POST.getName())) {
             String uri = buildRealURL();
@@ -135,7 +135,7 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
                     .doOnError(e -> LogUtils.error(LOGGER, e::getMessage))
                     .timeout(Duration.ofMillis(timeout))
                     .flatMap(this::doNext);
-            StaticLog.debug("执行POST请求", U.format("uri", uri, "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+            StaticLog.debug("执行POST请求", U.format("uri", uri, "remoteAddress", exchange.getRequest().getRemoteAddress(), "result", JSON.toJSON(result)));
 
             return result;
         }
@@ -158,7 +158,7 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
         }
         exchange.getAttributes().put(Constants.CLIENT_RESPONSE_ATTR, res);
         Mono<Void> result = chain.execute(exchange);
-        StaticLog.debug("执行下一个SoulPluginChain", U.format("ClientResponse", JSON.toJSON(res), "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+        StaticLog.debug("执行下一个SoulPluginChain", U.format("ClientResponse", JSON.toJSON(res), "remoteAddress", exchange.getRequest().getRemoteAddress(), "result", JSON.toJSON(result)));
 
         return result;
     }

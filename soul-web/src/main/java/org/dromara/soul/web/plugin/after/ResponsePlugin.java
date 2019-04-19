@@ -58,7 +58,7 @@ public class ResponsePlugin extends ParentPlugin implements SoulPlugin {
      */
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final SoulPluginChain chain) {
-        StaticLog.debug("执行ResponsePlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain)));
+        StaticLog.debug("执行ResponsePlugin", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "SoulPluginChain", JSON.toJSON(chain)));
 
         return chain.execute(exchange).then(Mono.defer(() -> {
 

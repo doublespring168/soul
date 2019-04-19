@@ -56,7 +56,7 @@ public final class SoulWebHandler implements WebHandler {
      */
     @Override
     public Mono<Void> handle(final ServerWebExchange exchange) {
-        StaticLog.debug("SoulWebHandler接收到请求,即将进入请求处理责任链", U.format("exchange", JSON.toJSON(exchange), "plugins", JSON.toJSON(plugins)));
+        StaticLog.debug("SoulWebHandler接收到请求,即将进入请求处理责任链", U.format("remoteAddress", exchange.getRequest().getRemoteAddress(), "plugins", JSON.toJSON(plugins)));
         return new DefaultSoulPluginChain(plugins)
                 .execute(exchange)
                 .doOnError(Throwable::printStackTrace);
