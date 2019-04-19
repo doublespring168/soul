@@ -18,6 +18,9 @@
 
 package org.dromara.soul.web.plugin.hystrix;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import com.netflix.hystrix.HystrixObservableCommand;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import com.netflix.hystrix.exception.HystrixTimeoutException;
@@ -43,6 +46,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import rx.Observable;
 import rx.RxReactiveStreams;
+import top.doublespring.utils.U;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -107,7 +111,7 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
             if (StringUtils.isNoneBlank(requestDTO.getExtInfo())) {
                 uri = uri + "?" + GsonUtils.getInstance().toGetParam(requestDTO.getExtInfo());
             }
-            return WEB_CLIENT.get().uri(uri)
+            Mono<Void> result = WEB_CLIENT.get().uri(uri)
                     .headers(httpHeaders -> {
                         httpHeaders.addAll(exchange.getRequest().getHeaders());
                         httpHeaders.remove(HttpHeaders.HOST);
@@ -116,8 +120,11 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
                     .doOnError(e -> LogUtils.error(LOGGER, e::getMessage))
                     .timeout(Duration.ofMillis(timeout))
                     .flatMap(this::doNext);
+            StaticLog.debug("执行GET请求", U.format("uri", uri, "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+            return result;
         } else if (requestDTO.getHttpMethod().equals(HttpMethodEnum.POST.getName())) {
-            return WEB_CLIENT.post().uri(buildRealURL())
+            String uri = buildRealURL();
+            Mono<Void> result = WEB_CLIENT.post().uri(uri)
                     .headers(httpHeaders -> {
                         httpHeaders.addAll(exchange.getRequest().getHeaders());
                         httpHeaders.remove(HttpHeaders.HOST);
@@ -128,6 +135,9 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
                     .doOnError(e -> LogUtils.error(LOGGER, e::getMessage))
                     .timeout(Duration.ofMillis(timeout))
                     .flatMap(this::doNext);
+            StaticLog.debug("执行POST请求", U.format("uri", uri, "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+
+            return result;
         }
         return Mono.empty();
     }
@@ -147,14 +157,20 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
             exchange.getAttributes().put(Constants.CLIENT_RESPONSE_RESULT_TYPE, ResultEnum.ERROR.getName());
         }
         exchange.getAttributes().put(Constants.CLIENT_RESPONSE_ATTR, res);
-        return chain.execute(exchange);
+        Mono<Void> result = chain.execute(exchange);
+        StaticLog.debug("执行下一个SoulPluginChain", U.format("ClientResponse", JSON.toJSON(res), "ServerWebExchange", JSON.toJSON(exchange), "result", JSON.toJSON(result)));
+
+        return result;
     }
 
     private MediaType buildMediaType() {
-        return MediaType.valueOf(Optional.ofNullable(exchange
+        MediaType mediaType = MediaType.valueOf(Optional.ofNullable(exchange
                 .getRequest()
                 .getHeaders().getFirst(HttpHeaders.CONTENT_TYPE))
                 .orElse(MediaType.APPLICATION_JSON_UTF8_VALUE));
+        StaticLog.debug("创建MediaType", U.format("mediaType", JSON.toJSON(mediaType)));
+
+        return mediaType;
     }
 
     @Override
@@ -163,23 +179,35 @@ public class HttpCommand extends HystrixObservableCommand<Void> {
     }
 
     private Mono<Void> doFallback() {
-        if (isFailedExecution()) {
-            LogUtils.error(LOGGER, "http execute have error:{}", () -> getExecutionException().getMessage());
-        }
+
+        StaticLog.debug("执行doFallback()");
+
         final Throwable exception = getExecutionException();
+
+        if (isFailedExecution()) {
+            StaticLog.debug("回调doFallback(),异常信息", U.format("Exception", ExceptionUtil.stacktraceToString(exception)));
+        }
         if (exception instanceof HystrixRuntimeException) {
             HystrixRuntimeException e = (HystrixRuntimeException) getExecutionException();
             if (e.getFailureType() == HystrixRuntimeException.FailureType.TIMEOUT) {
+                StaticLog.debug("回调doFallback() -> 请求超时", U.format("Exception", ExceptionUtil.stacktraceToString(exception)));
                 exchange.getResponse().setStatusCode(HttpStatus.GATEWAY_TIMEOUT);
             } else {
+                StaticLog.debug("回调doFallback() -> 内部处理错误", U.format("Exception", ExceptionUtil.stacktraceToString(exception)));
                 exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else if (exception instanceof HystrixTimeoutException) {
+            StaticLog.debug("回调doFallback() -> 请求超时", U.format("Exception", ExceptionUtil.stacktraceToString(exception)));
             exchange.getResponse().setStatusCode(HttpStatus.GATEWAY_TIMEOUT);
         }
         exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
         final SoulResult error = SoulResult.error(Constants.HTTP_ERROR_RESULT);
-        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-                .bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())));
+        Mono<Void> result = exchange.getResponse().writeWith(
+                Mono.just(
+                        exchange.getResponse().bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())
+                )
+        );
+        StaticLog.debug("回调doFallback() -> 返回结果", U.format("result", JSON.toJSON(result)));
+        return result;
     }
 }

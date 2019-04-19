@@ -18,6 +18,9 @@
 
 package org.dromara.soul.web.plugin.function;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.soul.common.constant.Constants;
@@ -30,7 +33,6 @@ import org.dromara.soul.common.enums.PluginTypeEnum;
 import org.dromara.soul.common.enums.ResultEnum;
 import org.dromara.soul.common.enums.RpcTypeEnum;
 import org.dromara.soul.common.utils.GsonUtils;
-import org.dromara.soul.common.utils.LogUtils;
 import org.dromara.soul.web.balance.LoadBalance;
 import org.dromara.soul.web.balance.factory.LoadBalanceFactory;
 import org.dromara.soul.web.cache.UpstreamCacheManager;
@@ -45,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import rx.Subscription;
+import top.doublespring.utils.U;
 
 import java.util.List;
 import java.util.Objects;
@@ -71,59 +74,64 @@ public class DividePlugin extends AbstractSoulPlugin {
     public DividePlugin(final ZookeeperCacheManager zookeeperCacheManager, final UpstreamCacheManager upstreamCacheManager) {
         super(zookeeperCacheManager);
         this.upstreamCacheManager = upstreamCacheManager;
+        StaticLog.debug("实例化DividePlugin", U.format(
+                "zookeeperCacheManager", JSON.toJSON(zookeeperCacheManager),
+                "upstreamCacheManager", JSON.toJSON(upstreamCacheManager)
+        ));
     }
 
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
+        StaticLog.debug("执行DividePlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "selector", JSON.toJSON(selector), "rule", JSON.toJSON(rule)));
+
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
 
-        final DivideRuleHandle ruleHandle = GsonUtils.getInstance().fromJson(rule.getHandle(), DivideRuleHandle.class);
+        final DivideRuleHandle divideRuleHandle = GsonUtils.getInstance().fromJson(rule.getHandle(), DivideRuleHandle.class);
 
-        if (StringUtils.isBlank(ruleHandle.getGroupKey())) {
-            ruleHandle.setGroupKey(Objects.requireNonNull(requestDTO).getModule());
+        if (StringUtils.isBlank(divideRuleHandle.getGroupKey())) {
+            divideRuleHandle.setGroupKey(Objects.requireNonNull(requestDTO).getModule());
         }
 
-        if (StringUtils.isBlank(ruleHandle.getCommandKey())) {
-            ruleHandle.setCommandKey(Objects.requireNonNull(requestDTO).getMethod());
+        if (StringUtils.isBlank(divideRuleHandle.getCommandKey())) {
+            divideRuleHandle.setCommandKey(Objects.requireNonNull(requestDTO).getMethod());
         }
 
-        final List<DivideUpstream> upstreamList =
-                upstreamCacheManager.findUpstreamListBySelectorId(selector.getId());
-        if (CollectionUtils.isEmpty(upstreamList)) {
-            LogUtils.error(LOGGER, "divide upstream config error：{}", rule::toString);
+        final List<DivideUpstream> divideUpstreams = upstreamCacheManager.findUpstreamListBySelectorId(selector.getId());
+        if (CollectionUtils.isEmpty(divideUpstreams)) {
+            StaticLog.debug("DivideUpstream不存在,执行下一个责任链插件");
             return chain.execute(exchange);
         }
 
         DivideUpstream divideUpstream = null;
-        if (upstreamList.size() == 1) {
-            divideUpstream = upstreamList.get(0);
+        if (divideUpstreams.size() == 1) {
+            divideUpstream = divideUpstreams.get(0);
         } else {
-            if (StringUtils.isNoneBlank(ruleHandle.getLoadBalance())) {
-                final LoadBalance loadBalance = LoadBalanceFactory.of(ruleHandle.getLoadBalance());
+            if (StringUtils.isNoneBlank(divideRuleHandle.getLoadBalance())) {
+                final LoadBalance loadBalance = LoadBalanceFactory.of(divideRuleHandle.getLoadBalance());
                 final String ip = Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress();
-                divideUpstream = loadBalance.select(upstreamList, ip);
+                divideUpstream = loadBalance.select(divideUpstreams, ip);
             }
         }
 
         if (Objects.isNull(divideUpstream)) {
-            LogUtils.error(LOGGER, () -> "LoadBalance has error！");
+            StaticLog.debug("LoadBalance DivideUpstream不存在,执行下一个责任链插件");
             return chain.execute(exchange);
         }
 
-        HttpCommand command = new HttpCommand(HystrixBuilder.build(ruleHandle), exchange, chain,
-                requestDTO, buildRealURL(divideUpstream), ruleHandle.getTimeout());
+        HttpCommand command = new HttpCommand(HystrixBuilder.build(divideRuleHandle), exchange, chain,
+                requestDTO, buildRealURL(divideUpstream), divideRuleHandle.getTimeout());
         return Mono.create(s -> {
             Subscription sub = command.toObservable().subscribe(s::success,
                     s::error, s::success);
             s.onCancel(sub::unsubscribe);
             if (command.isCircuitBreakerOpen()) {
-                LogUtils.error(LOGGER, () -> ruleHandle.getGroupKey() + "....http:circuitBreaker is Open.... !");
+                StaticLog.error("触发熔断风控", U.format("module", divideRuleHandle.getGroupKey(), "method", divideRuleHandle.getCommandKey(), "maxConcurrentRequests", divideRuleHandle.getMaxConcurrentRequests()));
             }
-        }).doOnError(throwable -> {
-            throwable.printStackTrace();
-            exchange.getAttributes().put(Constants.CLIENT_RESPONSE_RESULT_TYPE,
-                    ResultEnum.ERROR.getName());
-            chain.execute(exchange);
+        }).doOnError(exception -> {
+            exchange.getAttributes().put(Constants.CLIENT_RESPONSE_RESULT_TYPE, ResultEnum.ERROR.getName());
+            Mono<Void> result = chain.execute(exchange);
+            StaticLog.error("请求后台失败,执行下一个责任链插件", U.format("exception", ExceptionUtil.stacktraceToString(exception), "result", JSON.toJSON(result)));
+
         }).then();
     }
 

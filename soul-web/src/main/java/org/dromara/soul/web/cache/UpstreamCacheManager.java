@@ -18,9 +18,12 @@
 
 package org.dromara.soul.web.cache;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.dromara.soul.common.dto.convert.DivideUpstream;
 import org.dromara.soul.common.dto.zk.SelectorZkDTO;
 import org.dromara.soul.common.utils.GsonUtils;
@@ -30,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import top.doublespring.utils.U;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -62,12 +66,14 @@ public class UpstreamCacheManager {
     private Integer scheduledTime;
 
     /**
-     * Remove by key.
+     * Remove by ruleId.
      *
-     * @param key the key
+     * @param ruleId the ruleId
      */
-    static void removeByKey(final String key) {
-        UPSTREAM_MAP.remove(key);
+    static void removeByKey(final String ruleId) {
+        StaticLog.debug("根据ruleId移除UPSTREAM_MAP中缓存的DivideUpstream", U.format("ruleId", ruleId));
+
+        UPSTREAM_MAP.remove(ruleId);
     }
 
     /**
@@ -77,6 +83,8 @@ public class UpstreamCacheManager {
      */
     static void submit(final SelectorZkDTO selectorZkDTO) {
         try {
+            StaticLog.debug("向UpstreamCacheManager注册SelectorZkDTO", U.format("pluginName", selectorZkDTO.getPluginName(), "selectorZkDTO", JSON.toJSON(selectorZkDTO)));
+
             BLOCKING_QUEUE.put(selectorZkDTO);
         } catch (InterruptedException e) {
             LOGGER.error(e.getMessage());
@@ -90,7 +98,9 @@ public class UpstreamCacheManager {
      * @return the list
      */
     public List<DivideUpstream> findUpstreamListBySelectorId(final String selectorId) {
-        return UPSTREAM_MAP.get(selectorId);
+        List<DivideUpstream> divideUpstreams = UPSTREAM_MAP.get(selectorId);
+        StaticLog.debug("根据selectorId获取UpstreamList", U.format("selectorId", selectorId, "divideUpstreams", JSON.toJSON(divideUpstreams)));
+        return divideUpstreams;
     }
 
     /**
@@ -104,9 +114,12 @@ public class UpstreamCacheManager {
                     new LinkedBlockingQueue<>(),
                     SoulThreadFactory.create("save-upstream-task", false));
 
+            StaticLog.debug("UpstreamCacheManager初始化完成,即将初始化SelectorZkDTO提交监听任务线程");
+
             for (int i = 0; i < MAX_THREAD; i++) {
                 executorService.execute(new Worker());
             }
+            StaticLog.debug("UpstreamCacheManager初始化完成,即将初始化DivideUpstream可用性监听线程");
 
             new ScheduledThreadPoolExecutor(MAX_THREAD,
                     SoulThreadFactory.create("scheduled-upstream-task", false))
@@ -116,8 +129,19 @@ public class UpstreamCacheManager {
     }
 
     private void scheduled() {
-        if (SCHEDULED_MAP.size() > 0) {
-            SCHEDULED_MAP.forEach((k, v) -> UPSTREAM_MAP.put(k, check(v)));
+        int size = SCHEDULED_MAP.size();
+        if (size > 0) {
+            StaticLog.debug(String.format("即将检查SCHEDULED_MAP中缓存的DivideUpstream可用性,SCHEDULED_MAP.size() = %d", size));
+
+            SCHEDULED_MAP.forEach((selectorId, divideUpstreamList) -> {
+                StaticLog.debug("检查selectorId对应的DivideUpstream可用性", U.format("selectorId", selectorId, "List<DivideUpstream>.size", divideUpstreamList.size() + "", "divideUpstreamList", JSON.toJSON(divideUpstreamList)));
+                List<DivideUpstream> avaliableDivideUpstreams = check(divideUpstreamList);
+                StaticLog.debug("检查selectorId对应的DivideUpstream可用性", U.format("selectorId", selectorId, "List<DivideUpstream>.size", avaliableDivideUpstreams.size() + "", "divideUpstreamList", JSON.toJSON(avaliableDivideUpstreams)));
+                UPSTREAM_MAP.put(selectorId, avaliableDivideUpstreams);
+
+            });
+        } else {
+            StaticLog.debug("SCHEDULED_MAP.size() == 0,没有需要监听的线程");
         }
     }
 
@@ -126,7 +150,10 @@ public class UpstreamCacheManager {
         for (DivideUpstream divideUpstream : upstreamList) {
             final boolean pass = UrlUtils.checkUrl(divideUpstream.getUpstreamUrl());
             if (pass) {
+                StaticLog.debug("DivideUpstream可用", U.format("upstreamUrl", divideUpstream.getUpstreamUrl()));
                 resultList.add(divideUpstream);
+            } else {
+                StaticLog.debug("DivideUpstream >>> 不可用", U.format("upstreamUrl", divideUpstream.getUpstreamUrl()));
             }
         }
         return resultList;
@@ -141,6 +168,7 @@ public class UpstreamCacheManager {
         final List<DivideUpstream> upstreamList =
                 GsonUtils.getInstance().fromList(selectorZkDTO.getHandle(), DivideUpstream[].class);
         if (CollectionUtils.isNotEmpty(upstreamList)) {
+            StaticLog.debug("Worker监听线程注册zk新提交的SelectorZkDTO", U.format("selectorZkDTO", JSON.toJSON(selectorZkDTO)));
             SCHEDULED_MAP.put(selectorZkDTO.getId(), upstreamList);
             UPSTREAM_MAP.put(selectorZkDTO.getId(), check(upstreamList));
         }
@@ -153,6 +181,7 @@ public class UpstreamCacheManager {
 
         @Override
         public void run() {
+            StaticLog.debug("Worker线程即将执行register SelectorZkDTO任务");
             runTask();
         }
 
@@ -161,8 +190,9 @@ public class UpstreamCacheManager {
                 try {
                     final SelectorZkDTO selectorZkDTO = BLOCKING_QUEUE.take();
                     Optional.of(selectorZkDTO).ifPresent(UpstreamCacheManager.this::execute);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
+                    StaticLog.debug("Worker线程执行register SelectorZkDTO任务失败,错误信息如下:");
+                    StaticLog.debug(ExceptionUtils.getStackTrace(e));
                 }
             }
         }

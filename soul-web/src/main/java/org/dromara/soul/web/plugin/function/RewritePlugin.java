@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.plugin.function;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.soul.common.constant.Constants;
 import org.dromara.soul.common.dto.convert.RewriteHandle;
@@ -36,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Objects;
@@ -59,6 +62,9 @@ public class RewritePlugin extends AbstractSoulPlugin {
      */
     public RewritePlugin(final ZookeeperCacheManager zookeeperCacheManager) {
         super(zookeeperCacheManager);
+        StaticLog.debug("实例化RewritePlugin", U.format(
+                "zookeeperCacheManager", JSON.toJSON(zookeeperCacheManager)
+        ));
     }
 
     @Override

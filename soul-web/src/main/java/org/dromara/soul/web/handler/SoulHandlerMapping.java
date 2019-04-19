@@ -18,10 +18,13 @@
 
 package org.dromara.soul.web.handler;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.reactive.handler.AbstractHandlerMapping;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 /**
  * HandlerMapping.
@@ -40,6 +43,9 @@ public final class SoulHandlerMapping extends AbstractHandlerMapping {
     public SoulHandlerMapping(final SoulWebHandler soulWebHandler) {
         this.soulWebHandler = soulWebHandler;
         setOrder(1);
+        StaticLog.debug("实例化SoulHandlerMapping", U.format(
+                "soulWebHandler", JSON.toJSON(soulWebHandler)
+        ));
     }
 
     @Override

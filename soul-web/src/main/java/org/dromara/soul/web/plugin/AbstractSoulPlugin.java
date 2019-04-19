@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.plugin;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.dromara.soul.common.constant.Constants;
@@ -25,6 +27,7 @@ import org.dromara.soul.common.dto.zk.PluginZkDTO;
 import org.dromara.soul.common.dto.zk.RuleZkDTO;
 import org.dromara.soul.common.dto.zk.SelectorZkDTO;
 import org.dromara.soul.common.enums.PluginEnum;
+import org.dromara.soul.common.enums.PluginTypeEnum;
 import org.dromara.soul.common.enums.SelectorTypeEnum;
 import org.dromara.soul.common.result.SoulResult;
 import org.dromara.soul.common.utils.JsonUtils;
@@ -37,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.List;
 import java.util.Objects;
@@ -67,11 +71,14 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
      */
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final SoulPluginChain chain) {
+        StaticLog.debug("执行责任链插件", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain)));
+
         final PluginZkDTO pluginZkDTO = zookeeperCacheManager.findPluginByName(named());
         if (!(skip(exchange) || pluginZkDTO == null || !pluginZkDTO.getEnabled())) {
             //获取selector
             final List<SelectorZkDTO> selectors = zookeeperCacheManager.findSelectorByPluginName(named());
             if (CollectionUtils.isEmpty(selectors)) {
+                StaticLog.debug("SelectorZkDTO不存在,执行下一个责任链插件");
                 return chain.execute(exchange);
             }
             final SelectorZkDTO selectorZkDTO = selectors.stream()
@@ -79,16 +86,17 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
                     .findFirst().orElse(null);
 
             if (Objects.isNull(selectorZkDTO)) {
+                StaticLog.debug("不存在有效SelectorZkDTO,执行下一个责任链插件");
                 return chain.execute(exchange);
             }
 
             if (selectorZkDTO.getLoged()) {
-                LogUtils.info(LOGGER, named()
-                        + " selector success selector name :{}", selectorZkDTO::getName);
+                StaticLog.debug(getNamed() + " selector success selector name :{}", selectorZkDTO.getName());
+
             }
-            final List<RuleZkDTO> rules =
-                    zookeeperCacheManager.findRuleBySelectorId(selectorZkDTO.getId());
+            final List<RuleZkDTO> rules = zookeeperCacheManager.findRuleBySelectorId(selectorZkDTO.getId());
             if (CollectionUtils.isEmpty(rules)) {
+                StaticLog.debug("RuleZkDTO不存在,执行下一个责任链插件");
                 return chain.execute(exchange);
             }
 
@@ -139,6 +147,16 @@ public abstract class AbstractSoulPlugin implements SoulPlugin {
                 .filter((RuleZkDTO ruleZkDTO) -> MatchStrategyFactory.of(ruleZkDTO.getMatchMode())
                         .match(ruleZkDTO.getConditionZkDTOList(), exchange))
                 .findFirst().orElse(null);
+    }
+
+    @Override
+    public PluginTypeEnum getPluginType() {
+        return pluginType();
+    }
+
+    @Override
+    public String getNamed() {
+        return named();
     }
 
     /**

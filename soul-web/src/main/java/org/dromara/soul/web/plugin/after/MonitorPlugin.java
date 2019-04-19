@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.plugin.after;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.soul.common.constant.Constants;
 import org.dromara.soul.common.dto.zk.RuleZkDTO;
@@ -33,6 +35,7 @@ import org.dromara.soul.web.plugin.SoulPluginChain;
 import org.dromara.soul.web.request.RequestDTO;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.Objects;
 
@@ -55,12 +58,22 @@ public class MonitorPlugin extends AbstractSoulPlugin {
                          final ZookeeperCacheManager zookeeperCacheManager) {
         super(zookeeperCacheManager);
         this.soulEventPublisher = soulEventPublisher;
+        StaticLog.debug("实例化MonitorPlugin", U.format(
+                "soulEventPublisher", JSON.toJSON(soulEventPublisher),
+                "zookeeperCacheManager", JSON.toJSON(zookeeperCacheManager)
+        ));
     }
 
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
-        soulEventPublisher.publishEvent(buildMonitorData(exchange));
-        return chain.execute(exchange);
+        MonitorDO monitorDO = buildMonitorData(exchange);
+        soulEventPublisher.publishEvent(monitorDO);
+        Mono<Void> result = chain.execute(exchange);
+        StaticLog.debug("执行MonitorPlugin", U.format(
+                "monitorDO", JSON.toJSON(monitorDO),
+                "result", JSON.toJSON(result)
+        ));
+        return result;
     }
 
     private MonitorDO buildMonitorData(final ServerWebExchange exchange) {

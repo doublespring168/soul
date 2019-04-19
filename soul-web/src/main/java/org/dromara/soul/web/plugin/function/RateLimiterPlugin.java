@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.plugin.function;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.dromara.soul.common.constant.Constants;
 import org.dromara.soul.common.dto.convert.RateLimiterHandle;
 import org.dromara.soul.common.dto.zk.RuleZkDTO;
@@ -34,6 +36,7 @@ import org.dromara.soul.web.plugin.ratelimter.RedisRateLimiter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.Objects;
 
@@ -56,6 +59,10 @@ public class RateLimiterPlugin extends AbstractSoulPlugin {
                              final RedisRateLimiter redisRateLimiter) {
         super(zookeeperCacheManager);
         this.redisRateLimiter = redisRateLimiter;
+        StaticLog.debug("实例化RateLimiterPlugin", U.format(
+                "redisRateLimiter", JSON.toJSON(redisRateLimiter),
+                "zookeeperCacheManager", JSON.toJSON(zookeeperCacheManager)
+        ));
     }
 
     /**

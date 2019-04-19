@@ -18,11 +18,14 @@
 
 package org.dromara.soul.web.handler;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import org.dromara.soul.web.plugin.SoulPlugin;
 import org.dromara.soul.web.plugin.SoulPluginChain;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebHandler;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.List;
 
@@ -41,6 +44,7 @@ public final class SoulWebHandler implements WebHandler {
      * @param plugins the plugins
      */
     public SoulWebHandler(final List<SoulPlugin> plugins) {
+        StaticLog.debug("初始化SoulWebHandler", U.format("plugins", JSON.toJSON(plugins)));
         this.plugins = plugins;
     }
 
@@ -52,6 +56,7 @@ public final class SoulWebHandler implements WebHandler {
      */
     @Override
     public Mono<Void> handle(final ServerWebExchange exchange) {
+        StaticLog.debug("SoulWebHandler接收到请求,即将进入请求处理责任链", U.format("exchange", JSON.toJSON(exchange), "plugins", JSON.toJSON(plugins)));
         return new DefaultSoulPluginChain(plugins)
                 .execute(exchange)
                 .doOnError(Throwable::printStackTrace);
@@ -81,8 +86,11 @@ public final class SoulWebHandler implements WebHandler {
         public Mono<Void> execute(final ServerWebExchange exchange) {
             if (this.index < plugins.size()) {
                 SoulPlugin plugin = plugins.get(this.index++);
-                return plugin.execute(exchange, this);
+                Mono<Void> result = plugin.execute(exchange, this);
+                StaticLog.debug("执行责任链插件", U.format("plugin", JSON.toJSON(plugin), "result", JSON.toJSON(result)));
+                return result;
             } else {
+                StaticLog.debug("责任链插件全部执行完毕");
                 return Mono.empty();
             }
         }

@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.plugin.before;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.soul.common.constant.Constants;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import top.doublespring.utils.U;
 
 import java.util.Map;
 import java.util.Objects;
@@ -62,19 +65,32 @@ public class SignPlugin extends AbstractSoulPlugin {
     public SignPlugin(final ZookeeperCacheManager zookeeperCacheManager) {
         super(zookeeperCacheManager);
         this.zookeeperCacheManager = zookeeperCacheManager;
+        StaticLog.debug("实例化SignPlugin", U.format(
+                "zookeeperCacheManager", JSON.toJSON(zookeeperCacheManager)
+        ));
+
     }
 
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final SoulPluginChain chain, final SelectorZkDTO selector, final RuleZkDTO rule) {
         final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
-        final Boolean success = signVerify(Objects.requireNonNull(requestDTO));
-        if (!success) {
+        final Boolean signIsPassed = signVerify(Objects.requireNonNull(requestDTO));
+        if (!signIsPassed) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             final SoulResult error = SoulResult.error(HttpStatus.UNAUTHORIZED.value(), Constants.SIGN_IS_NOT_PASS);
-            return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-                    .bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())));
+
+            Mono<Void> result = exchange.getResponse().writeWith(
+                    Mono.just(
+                            exchange.getResponse().bufferFactory().wrap(Objects.requireNonNull(JsonUtils.toJson(error)).getBytes())
+                    )
+            );
+            StaticLog.debug("执行SignPlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
+
+            return result;
         }
-        return chain.execute(exchange);
+        Mono<Void> result = chain.execute(exchange);
+        StaticLog.debug("执行SignPlugin", U.format("ServerWebExchange", JSON.toJSON(exchange), "SoulPluginChain", JSON.toJSON(chain), "result", JSON.toJSON(result), "signIsPassed", signIsPassed));
+        return result;
     }
 
     /**

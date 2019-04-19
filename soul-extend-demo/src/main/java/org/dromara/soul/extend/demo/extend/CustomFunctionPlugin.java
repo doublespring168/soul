@@ -19,6 +19,7 @@
 package org.dromara.soul.extend.demo.extend;
 
 import org.dromara.soul.common.enums.PluginTypeEnum;
+import org.dromara.soul.web.plugin.ParentPlugin;
 import org.dromara.soul.web.plugin.SoulPlugin;
 import org.dromara.soul.web.plugin.SoulPluginChain;
 import org.slf4j.Logger;
@@ -35,7 +36,7 @@ import reactor.core.publisher.Mono;
  * @author xiaoyu(Myth)
  */
 @Component
-public class CustomFunctionPlugin implements SoulPlugin {
+public class CustomFunctionPlugin extends ParentPlugin implements SoulPlugin {
 
     /**
      * logger.

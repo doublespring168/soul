@@ -48,6 +48,8 @@ public interface SoulPlugin {
      */
     PluginTypeEnum pluginType();
 
+    PluginTypeEnum getPluginType();
+
     /**
      * return plugin order .
      * This attribute To determine the plugin execution order in the same type plugin.
@@ -64,6 +66,8 @@ public interface SoulPlugin {
      * @return plugin name.
      */
     String named();
+
+    String getNamed();
 
     /**
      * plugin is execute.

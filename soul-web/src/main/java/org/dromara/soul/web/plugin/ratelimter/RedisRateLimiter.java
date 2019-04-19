@@ -18,7 +18,8 @@
 
 package org.dromara.soul.web.plugin.ratelimter;
 
-import org.dromara.soul.common.utils.LogUtils;
+import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.log.StaticLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -93,12 +94,12 @@ public class RedisRateLimiter {
                         boolean allowed = results.get(0) == 1L;
                         Long tokensLeft = results.get(1);
                         RateLimiterResponse rateLimiterResponse = new RateLimiterResponse(allowed, tokensLeft);
-                        LogUtils.debug(LOGGER, "RateLimiter response:{}", rateLimiterResponse::toString);
+                        StaticLog.debug("RateLimiter response:{}", rateLimiterResponse::toString);
                         return rateLimiterResponse;
                     });
         } catch (Exception e) {
-            e.printStackTrace();
-            LogUtils.error(LOGGER, () -> "Error determining if user allowed from redis" + e.getMessage());
+            StaticLog.debug("Error determining if user allowed from redis", ExceptionUtil.stacktraceToString(e));
+
         }
         return Mono.just(new RateLimiterResponse(true, -1));
     }

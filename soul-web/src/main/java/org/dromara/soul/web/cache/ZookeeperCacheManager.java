@@ -18,6 +18,8 @@
 
 package org.dromara.soul.web.cache;
 
+import cn.hutool.log.StaticLog;
+import com.alibaba.fastjson.JSON;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import top.doublespring.utils.U;
 
 import java.util.Comparator;
 import java.util.List;
@@ -80,7 +83,9 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
      * @return AppAuthZkDTO {@linkplain AppAuthZkDTO}
      */
     public AppAuthZkDTO findAuthDTOByAppKey(final String appKey) {
-        return AUTH_MAP.get(appKey);
+        AppAuthZkDTO appAuthZkDTO = AUTH_MAP.get(appKey);
+        StaticLog.debug("根据appKey查询AuthDTO", U.format("appKey", appKey, "appAuthZkDTO", JSON.toJSON(appAuthZkDTO)));
+        return appAuthZkDTO;
     }
 
     /**
@@ -90,7 +95,9 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
      * @return PluginZkDTO {@linkplain  PluginZkDTO}
      */
     public PluginZkDTO findPluginByName(final String pluginName) {
-        return PLUGIN_MAP.get(pluginName);
+        PluginZkDTO pluginZkDTO = PLUGIN_MAP.get(pluginName);
+        StaticLog.debug("根据pluginName查询Plugin", U.format("pluginName", pluginName, "pluginZkDTO", JSON.toJSON(pluginZkDTO)));
+        return pluginZkDTO;
     }
 
     /**
@@ -100,7 +107,9 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
      * @return SelectorZkDTO list {@linkplain  SelectorZkDTO}
      */
     public List<SelectorZkDTO> findSelectorByPluginName(final String pluginName) {
-        return SELECTOR_MAP.get(pluginName);
+        List<SelectorZkDTO> selectorZkDTOS = SELECTOR_MAP.get(pluginName);
+        StaticLog.debug("根据pluginName查询Selector", U.format("pluginName", pluginName, "selectorZkDTOS", JSON.toJSON(selectorZkDTOS)));
+        return selectorZkDTOS;
     }
 
     /**
@@ -110,7 +119,9 @@ public class ZookeeperCacheManager implements CommandLineRunner, DisposableBean 
      * @return RuleZkDTO list {@linkplain  RuleZkDTO}
      */
     public List<RuleZkDTO> findRuleBySelectorId(final String selectorId) {
-        return RULE_MAP.get(selectorId);
+        List<RuleZkDTO> ruleZkDTOS = RULE_MAP.get(selectorId);
+        StaticLog.debug("根据selectorId查询Rule", U.format("selectorId", selectorId, "ruleZkDTOS", JSON.toJSON(ruleZkDTOS)));
+        return ruleZkDTOS;
     }
 
     @Override
