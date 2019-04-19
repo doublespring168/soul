@@ -19,6 +19,15 @@ spring:
     url: localhost:2181
     sessionTimeout: 5000
     connectionTimeout: 2000
+  redis:
+    #password: foobaredbbexONE123
+    timeout: 300000ms
+    sentinel:
+      master: mymaster
+      nodes:
+        - 127.0.0.1:26479
+        - 127.0.0.1:26579
+        - 127.0.0.1:26679
 
 mybatis:
   config-location: classpath:/mybatis/mybatis-config.xml
