@@ -18,8 +18,11 @@
 
 package org.dromara.soul.web.condition.strategy;
 
-import org.dromara.soul.common.dto.zk.ConditionZkDTO;
+import org.dromara.soul.common.constant.Constants;
+import org.dromara.soul.common.dto.ConditionData;
 import org.dromara.soul.common.enums.ParamTypeEnum;
+import org.dromara.soul.common.utils.ReflectUtils;
+import org.dromara.soul.web.request.RequestDTO;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
@@ -42,7 +45,7 @@ abstract class AbstractMatchStrategy {
      * @param exchange  the exchange
      * @return the string
      */
-    String buildRealData(final ConditionZkDTO condition, final ServerWebExchange exchange) {
+    String buildRealData(final ConditionData condition, final ServerWebExchange exchange) {
         String realData = "";
         if (condition.getParamType().equals(ParamTypeEnum.QUERY.getName())) {
             final MultiValueMap<String, String> queryParams = exchange.getRequest().getQueryParams();
@@ -58,6 +61,9 @@ abstract class AbstractMatchStrategy {
                 return realData;
             }
             realData = Objects.requireNonNull(headers.get(condition.getParamName())).stream().findFirst().orElse("");
+        }  else if (condition.getParamType().equals(ParamTypeEnum.POST.getName())) {
+            final RequestDTO requestDTO = exchange.getAttribute(Constants.REQUESTDTO);
+            realData = (String) ReflectUtils.getFieldValue(requestDTO, condition.getParamName());
         }
         return realData;
     }

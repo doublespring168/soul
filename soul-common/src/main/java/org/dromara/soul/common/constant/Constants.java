@@ -86,6 +86,11 @@ public interface Constants {
     String EXT_INFO = "extInfo";
 
     /**
+     * The constant PATH_VARIABLE.
+     */
+    String PATH_VARIABLE = "pathVariable";
+
+    /**
      * The constant HTTP_METHOD.
      */
     String HTTP_METHOD = "httpMethod";
@@ -153,7 +158,7 @@ public interface Constants {
     /**
      * The constant UPSTREAM_NOT_FIND.
      */
-    String UPSTREAM_NOT_FIND = "this can not rule upstream please check you config!";
+    String UPSTREAM_NOT_FIND = "this can not rule upstream please check you configuration!";
 
     /**
      * The constant TOO_MANY_REQUESTS.
