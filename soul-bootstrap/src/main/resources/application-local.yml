@@ -15,10 +15,10 @@ soul :
         strategy: http
 #        websocket :
 #             url: ws://localhost:8887/websocket
-#        zookeeper:
-#             url: localhost:2181
-#             sessionTimeout: 5000
-#             connectionTimeout: 2000
+        zookeeper:
+             url: localhost:2181
+             sessionTimeout: 5000
+             connectionTimeout: 2000
         http:
              url : http://localhost:8887
 
@@ -34,7 +34,7 @@ eureka:
 
 logging:
     level:
-        root: info
+        root: debug
         org.springframework.boot: info
         org.apache.ibatis: info
         org.dromara.soul.bonuspoint: info

@@ -10,7 +10,7 @@ spring:
        prefix: classpath:/static/
        suffix: .html
    datasource:
-     url: jdbc:mysql://192.168.1.82:3306/soul?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=CONVERT_TO_NULL&failOverReadOnly=false&autoReconnect=true
+     url: jdbc:mysql://localhost:3307/soul_security_oauth2?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=CONVERT_TO_NULL&failOverReadOnly=false&autoReconnect=true
      username: root
      password: 123456
      dbcp2:
@@ -23,10 +23,10 @@ mybatis:
 soul:
   sync:
       strategy: http
-#      zookeeper:
-#        url: localhost:2181
-#        sessionTimeout: 5000
-#        connectionTimeout: 2000
+      zookeeper:
+        url: localhost:2181
+        sessionTimeout: 5000
+        connectionTimeout: 2000
 
 
 logging:
